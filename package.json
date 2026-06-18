@@ -1,0 +1,18 @@
+{
+	"name": "monorepo",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "concurrently --kill-others --raw \"composer --working-dir=Backend dev\" \"npm run dev --prefix Frontend\"",
+		"build": "concurrently --raw \"composer --working-dir=Backend build\" \"npm run build --prefix Frontend\"",
+		"start": "concurrently --kill-others --raw \"composer --working-dir=Backend start\" \"npm run start --prefix Frontend\"",
+		"lint": "concurrently --raw \"composer --working-dir=Backend lint\" \"npm run lint --prefix Frontend\""
+	},
+	"devDependencies": {
+		"concurrently": "^9.1.2"
+	},
+	"workspaces": [
+		"Backend",
+		"Frontend"
+	]
+}
