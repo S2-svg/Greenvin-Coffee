@@ -39,6 +39,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -53,6 +54,14 @@ export default function AdminOrdersPage() {
   }, [search, statusFilter, page]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  useEffect(() => {
+    if (!autoRefresh || detailOpen) return;
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, detailOpen, fetchOrders]);
 
   useEffect(() => { setPage(1); }, [search, statusFilter]);
 
@@ -124,6 +133,17 @@ export default function AdminOrdersPage() {
             </button>
           )}
         </div>
+        
+        <div className="flex items-center gap-2 bg-background border rounded-md px-3 h-10">
+          <span className="text-xs font-medium text-muted-foreground">Auto-refresh</span>
+          <input 
+            type="checkbox" 
+            checked={autoRefresh} 
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+        </div>
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <Filter className="w-4 h-4 mr-2" />
@@ -165,8 +185,15 @@ export default function AdminOrdersPage() {
                     <tr key={order.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => openDetail(order)}>
                       <td className="p-3 font-mono text-xs font-medium">#{order.id?.slice(0, 8)}</td>
                       <td className="p-3">
-                        <p className="font-medium">{order.customer_name}</p>
-                        <p className="text-[10px] text-muted-foreground">{order.customer_phone}</p>
+                        <div className="flex flex-col">
+                          <p className="font-medium flex items-center gap-2">
+                            {order.customer_name}
+                            {order.user && (
+                              <Badge className="text-[8px] h-3 px-1 bg-primary/20 text-primary border-none">User</Badge>
+                            )}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{order.customer_phone}</p>
+                        </div>
                       </td>
                       <td className="p-3">
                         <span className="text-muted-foreground">{order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}</span>
@@ -237,7 +264,12 @@ export default function AdminOrdersPage() {
                 {selectedOrder.customer_email && (
                   <div className="col-span-2">
                     <p className="text-muted-foreground text-xs">Email</p>
-                    <p className="font-medium">{selectedOrder.customer_email}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      {selectedOrder.customer_email}
+                      {selectedOrder.user && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Registered User: {selectedOrder.user.name}</span>
+                      )}
+                    </p>
                   </div>
                 )}
                 {selectedOrder.customer_address && (

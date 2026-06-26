@@ -13,11 +13,14 @@ import DrinkCard from '@/components/DrinkCard.jsx';
 import FoodCard from '@/components/FoodCard.jsx';
 import CartItem from '@/components/CartItem.jsx';
 import KHQRPaymentDialog from '@/components/KHQRPaymentDialog.jsx';
-import { getMenu, createOrder } from '@/lib/api.js';
+import { getMenu, createOrder, login, register } from '@/lib/api.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export default function OrderPage() {
+  const { user, openLogin } = useAuth();
   const [allItems, setAllItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,11 +32,45 @@ export default function OrderPage() {
     address: '',
     phone: ''
   });
+
+  useEffect(() => {
+    if (user) {
+      setCheckoutData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || ''
+      });
+    }
+  }, [user]);
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('pending'); // 'pending', 'paid'
+  const [liveStatus, setLiveStatus] = useState('pending');
+
+  useEffect(() => {
+    if (!orderPlaced || !confirmedOrder || liveStatus === 'completed') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/${confirmedOrder.id}`);
+        const result = await response.json();
+        if (result.success && result.data.status !== liveStatus) {
+          setLiveStatus(result.data.status);
+          if (result.data.status === 'ready') {
+            toast.success('Your order is READY for pickup!', { duration: 10000 });
+          }
+        }
+      } catch (err) {
+        console.error('Status poll error:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [orderPlaced, confirmedOrder, liveStatus]);
 
   useEffect(() => {
     const fetchAllItems = async () => {
@@ -371,9 +408,19 @@ export default function OrderPage() {
                           className="mt-6 p-6 bg-secondary/10 rounded-xl text-center"
                         >
                           <CheckCircle className="w-16 h-16 text-secondary mx-auto mb-4" />
-                          <h3 className="text-xl font-semibold text-foreground mb-2">Order confirmed & Paid</h3>
+                          <h3 className="text-xl font-semibold text-foreground mb-2">
+                            {liveStatus === 'ready' ? 'Order Ready for Pickup!' : 'Order Confirmed & Paid'}
+                          </h3>
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <Badge className="bg-secondary/20 text-secondary border-secondary/30 capitalize px-4 py-1">
+                              Status: {liveStatus}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground mb-4">
-                            We've received your payment! We'll have your order ready for pickup in 15-20 minutes. Order #{confirmedOrder?.id?.slice(0, 8) || 'confirmed'} is now in the queue.
+                            {liveStatus === 'ready' 
+                              ? "Your order is ready! Please head to the counter for pickup."
+                              : "We've received your payment! We'll have your order ready for pickup in 15-20 minutes."}
+                            {" "}Order #{confirmedOrder?.id?.slice(0, 8) || 'confirmed'} is now in the queue.
                           </p>
                           
                           <Button
@@ -504,9 +551,19 @@ export default function OrderPage() {
                           className="mt-6 p-6 bg-secondary/10 rounded-xl text-center"
                         >
                           <CheckCircle className="w-16 h-16 text-secondary mx-auto mb-4" />
-                          <h3 className="text-xl font-semibold text-foreground mb-2">Order confirmed & Paid</h3>
+                          <h3 className="text-xl font-semibold text-foreground mb-2">
+                            {liveStatus === 'ready' ? 'Order Ready for Pickup!' : 'Order Confirmed & Paid'}
+                          </h3>
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <Badge className="bg-secondary/20 text-secondary border-secondary/30 capitalize px-4 py-1">
+                              Status: {liveStatus}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground mb-4">
-                            We've received your payment! We'll have your order ready for pickup in 15-20 minutes. Order #{confirmedOrder?.id?.slice(0, 8) || 'confirmed'} is now in the queue.
+                            {liveStatus === 'ready' 
+                              ? "Your order is ready! Please head to the counter for pickup."
+                              : "We've received your payment! We'll have your order ready for pickup in 15-20 minutes."}
+                            {" "}Order #{confirmedOrder?.id?.slice(0, 8) || 'confirmed'} is now in the queue.
                           </p>
                           
                           <Button

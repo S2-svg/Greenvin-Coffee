@@ -157,6 +157,69 @@ export default function AdminSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Bakong / KHQR Configuration</CardTitle>
+              <CardDescription>Configure your Bakong merchant account for KHQR payments.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bakong_account_id">Bakong Account ID / Email</Label>
+                  <Input 
+                    id="bakong_account_id" 
+                    placeholder="e.g. name@aba" 
+                    value={getValue('bakong_account_id')} 
+                    onChange={(e) => updateSetting('bakong_account_id', e.target.value)} 
+                  />
+                  <p className="text-[10px] text-muted-foreground">Your Bakong ID where money will be sent.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="khqr_verification_mode">Verification Mode</Label>
+                  <select 
+                    id="khqr_verification_mode"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={getValue('khqr_verification_mode') || 'auto'}
+                    onChange={(e) => updateSetting('khqr_verification_mode', e.target.value)}
+                  >
+                    <option value="auto">Automatic (API Token required)</option>
+                    <option value="manual">Manual (Staff confirms receipt)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bakong_merchant_name">Merchant Name</Label>
+                  <Input 
+                    id="bakong_merchant_name" 
+                    value={getValue('bakong_merchant_name')} 
+                    onChange={(e) => updateSetting('bakong_merchant_name', e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bakong_merchant_city">Merchant City</Label>
+                  <Input 
+                    id="bakong_merchant_city" 
+                    value={getValue('bakong_merchant_city')} 
+                    onChange={(e) => updateSetting('bakong_merchant_city', e.target.value)} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bakong_api_token">Bakong API Token</Label>
+                <Input 
+                  id="bakong_api_token" 
+                  type="password"
+                  placeholder="Only needed for Automatic mode"
+                  value={getValue('bakong_api_token')} 
+                  onChange={(e) => updateSetting('bakong_api_token', e.target.value)} 
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div>

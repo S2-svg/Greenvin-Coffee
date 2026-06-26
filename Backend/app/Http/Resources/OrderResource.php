@@ -16,8 +16,10 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'status' => $this->status,
             'payment_method' => $this->payment_method,
+            'paymentVerification' => \App\Models\Setting::getValue('khqr_verification_mode', 'auto'),
             'order_source' => $this->order_source,
             'khqr' => $this->khqr,
             'khqr_md5' => $this->khqr_md5,

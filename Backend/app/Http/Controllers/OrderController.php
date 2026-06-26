@@ -41,7 +41,20 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = Order::with('items')->latest()->paginate(50);
+        $query = Order::with('items')->latest();
+
+        if (auth('sanctum')->check()) {
+            $query->where('user_id', auth('sanctum')->id());
+        } else {
+            // For guests, we don't return all orders.
+            // They might see orders if they provide a phone, but for now just return empty.
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
+        }
+
+        $orders = $query->paginate(50);
         
         return response()->json([
             'success' => true,

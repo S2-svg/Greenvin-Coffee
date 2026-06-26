@@ -42,6 +42,28 @@ export const createOrder = (order) =>
   request("/orders", {
     method: "POST",
     body: JSON.stringify(order),
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('auth_token') || ''}`
+    }
+  });
+
+export const login = (email, password) =>
+  request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+export const register = (data) =>
+  request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getMe = () => 
+  request("/auth/me", {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('auth_token') || ''}`
+    }
   });
 
 export const verifyOrderPayment = (orderId) => 

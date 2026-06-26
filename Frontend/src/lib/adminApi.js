@@ -16,7 +16,7 @@ const getApiBaseUrl = () => {
 
 const apiBaseUrl = getApiBaseUrl();
 
-const getToken = () => localStorage.getItem('admin_token');
+const getToken = () => localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
 
 const adminRequest = async (path, options = {}) => {
   const token = getToken();
@@ -33,6 +33,8 @@ const adminRequest = async (path, options = {}) => {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
       window.location.href = '/admin/login';

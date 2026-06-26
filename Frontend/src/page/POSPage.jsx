@@ -38,6 +38,28 @@ export default function POSPage() {
   const [confirmedOrder, setConfirmedOrder] = useState(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [liveStatus, setLiveStatus] = useState('pending');
+
+  useEffect(() => {
+    if (!orderSuccess || !confirmedOrder || liveStatus === 'completed') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/${confirmedOrder.id}`);
+        const result = await response.json();
+        if (result.success && result.data.status !== liveStatus) {
+          setLiveStatus(result.data.status);
+          if (result.data.status === 'ready') {
+            toast.success('Order is READY for pickup!', { duration: 10000 });
+          }
+        }
+      } catch (err) {
+        console.error('Status poll error:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [orderSuccess, confirmedOrder, liveStatus]);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -381,6 +403,11 @@ export default function POSPage() {
                 <CheckCircle className="w-12 h-12 text-primary" />
               </div>
               <h2 className="text-2xl font-bold mb-2">Order Successful!</h2>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Badge className="bg-primary/20 text-primary border-primary/30 capitalize px-4 py-1">
+                  Status: {liveStatus}
+                </Badge>
+              </div>
               <p className="text-muted-foreground mb-8">
                 Order #{confirmedOrder?.id?.slice(0, 8)} has been placed and sent to the kitchen.
               </p>

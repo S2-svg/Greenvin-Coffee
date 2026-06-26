@@ -14,19 +14,28 @@ import { toast } from 'sonner';
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetch = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      else setIsRefreshing(true);
+      
+      const res = await getDashboard();
+      setData(res.data);
+    } catch (err) {
+      toast.error('Failed to load dashboard');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await getDashboard();
-        setData(res.data);
-      } catch (err) {
-        toast.error('Failed to load dashboard');
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetch();
+    // Auto-refresh dashboard every 30 seconds
+    const interval = setInterval(() => fetch(true), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {

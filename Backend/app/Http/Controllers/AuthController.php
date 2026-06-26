@@ -24,7 +24,8 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('admin-token', ['admin'])->plainTextToken;
+        $abilities = $user->is_admin ? ['admin'] : ['customer'];
+        $token = $user->createToken('auth-token', $abilities)->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -35,9 +36,48 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'is_admin' => $user->is_admin,
+                    'phone' => $user->phone ?? null,
+                    'address' => $user->address ?? null,
                 ],
             ],
         ]);
+    }
+
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'is_admin' => false,
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+        ]);
+
+        $token = $user->createToken('auth-token', ['customer'])->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'is_admin' => $user->is_admin,
+                    'phone' => $user->phone,
+                    'address' => $user->address,
+                ],
+            ],
+        ], 201);
     }
 
     public function me(Request $request)
@@ -49,6 +89,8 @@ class AuthController extends Controller
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
                 'is_admin' => $request->user()->is_admin,
+                'phone' => $request->user()->phone,
+                'address' => $request->user()->address,
             ],
         ]);
     }

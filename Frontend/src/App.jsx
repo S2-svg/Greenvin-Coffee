@@ -19,6 +19,7 @@ import AdminLayout from './page/AdminLayout.jsx';
 import AdminMenuPage from './page/AdminMenuPage.jsx';
 import AdminOrdersPage from './page/AdminOrdersPage.jsx';
 import AdminSettingsPage from './page/AdminSettingsPage.jsx';
+import GlobalAuthDialog from './components/GlobalAuthDialog.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +38,7 @@ function App() {
   return (
     <OrderProvider>
       <AuthProvider>
+        <GlobalAuthDialog />
         <Router>
           <ScrollToTop />
           <Routes>

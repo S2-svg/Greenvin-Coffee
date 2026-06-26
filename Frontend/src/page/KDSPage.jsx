@@ -61,8 +61,8 @@ export default function KDSPage() {
 
   useEffect(() => {
     fetchOrders();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => fetchOrders(true), 30000);
+    // Auto-refresh every 5 seconds for a dynamic feel
+    const interval = setInterval(() => fetchOrders(true), 5000);
     return () => clearInterval(interval);
   }, []);
 

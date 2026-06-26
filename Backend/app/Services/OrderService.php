@@ -32,6 +32,7 @@ class OrderService
 
         $order = Order::create([
             'id' => Str::uuid()->toString(),
+            'user_id' => auth('sanctum')->id(),
             'customer_name' => $data['customer']['name'],
             'customer_email' => $data['customer']['email'] ?? 'pos@greenvin.com',
             'customer_phone' => $data['customer']['phone'],
@@ -103,26 +104,28 @@ class OrderService
 
     public function generateKHQR(Order $order)
     {
-        $accountId = env('BAKONG_ACCOUNT_ID');
-        if (!$accountId || str_starts_with($accountId, 'your_') || $accountId === 'developer@devb') {
+        $accountId = Setting::getValue('bakong_account_id', env('BAKONG_ACCOUNT_ID'));
+        if (!$accountId || str_starts_with($accountId, 'your_') || $accountId === 'developer@devb' || $accountId === 'your_bakong_account_id') {
             Log::warning('KHQR generation skipped: invalid Bakong account ID configured.');
-            throw new \Exception('KHQR generation failed: invalid Bakong account ID. Please configure BAKONG_ACCOUNT_ID in .env');
+            throw new \Exception('KHQR generation failed: invalid Bakong account ID. Please configure it in Settings.');
         }
 
         try {
+            $merchantName = Setting::getValue('bakong_merchant_name', env('BAKONG_MERCHANT_NAME', 'Greenvin Coffee'));
+            $merchantCity = Setting::getValue('bakong_merchant_city', env('BAKONG_MERCHANT_CITY', 'Phnom Penh'));
+
             $optionalData = [
                 'currency' => 'USD',
                 'amount' => (float)$order->total,
                 'billNumber' => substr($order->id, 0, 10),
                 'storeLabel' => 'Greenvin Coffee',
                 'terminalLabel' => 'Main',
-                // 'expirationTimestamp' => (time() + 15 * 60) * 1000, // Not sure if this package supports it directly in the same way
             ];
 
             $info = new IndividualInfo(
                 $accountId,
-                env('BAKONG_MERCHANT_NAME', 'Greenvin Coffee'),
-                env('BAKONG_MERCHANT_CITY', 'Phnom Penh'),
+                $merchantName,
+                $merchantCity,
                 'USD',
                 (float)$order->total,
                 $optionalData['billNumber'],
@@ -141,7 +144,7 @@ class OrderService
                 'md5' => $response->data['md5'],
             ];
         } catch (\Exception $e) {
-            // Log error
+            Log::error('KHQR generation error: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -152,8 +155,13 @@ class OrderService
             return $order;
         }
 
-        $apiToken = env('BAKONG_API_TOKEN');
-        $apiUrl = env('BAKONG_API_URL');
+        $verificationMode = Setting::getValue('khqr_verification_mode', 'auto');
+        if ($verificationMode === 'manual') {
+            return $order; // Manual verification handled by admin in dashboard
+        }
+
+        $apiToken = Setting::getValue('bakong_api_token', env('BAKONG_API_TOKEN'));
+        $apiUrl = Setting::getValue('bakong_api_url', env('BAKONG_API_URL'));
 
         if (!$apiToken || !$order->khqr_md5) {
             return $order;
@@ -186,7 +194,7 @@ class OrderService
         $amountMatches = abs($paidAmount - $expectedAmount) < 0.01;
         $currencyMatches = !isset($transaction['currency']) || $transaction['currency'] === 'USD';
         $recipientMatches = !isset($transaction['toAccountId']) || 
-            strtolower($transaction['toAccountId']) === strtolower(env('BAKONG_ACCOUNT_ID'));
+            strtolower($transaction['toAccountId']) === strtolower(Setting::getValue('bakong_account_id', env('BAKONG_ACCOUNT_ID')));
 
         return $amountMatches && $currencyMatches && $recipientMatches;
     }
